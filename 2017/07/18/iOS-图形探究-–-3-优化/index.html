@@ -93,19 +93,19 @@
 
 
 
-<meta name="description" content="最近将博客迁移到github pages上，发现我之前购买的服务器早就过期，导致我丢失了前面几篇博客😂（不备份的锅）。最后只找到了最后一篇，姑且先将其放上来，如果有时间再补充前面的。  很久没有更新博客了，因为一些个人事情耽误了很久，而且最近也准备换工作，忙得不可开交。这几天抽得空闲再续前言。  引言前面两篇博客已经简单得说明了基本成像原理和Core Animation工作机制。本文将据此分析具">
+<meta name="description" content="很久没有更新博客了，因为一些个人事情耽误了很久，而且最近也准备换工作，忙得不可开交。这几天抽得空闲再续前言。  引言前面两篇博客已经简单得说明了基本成像原理和Core Animation工作机制。本文将据此分析具体卡顿的原因，如何避免这些问题造成的卡顿。这里只提供基本的解决思路，不涉及完整的代码实现。 有一点需要补充说明的，第一篇中我们说了帧缓存这个概念，那么在iOS系统中使用的是双缓存还是三缓">
 <meta property="og:type" content="article">
 <meta property="og:title" content="iOS 图形探究 – 3.优化">
 <meta property="og:url" content="http://yoursite.com/2017/07/18/iOS-图形探究-–-3-优化/index.html">
 <meta property="og:site_name" content="Blog">
-<meta property="og:description" content="最近将博客迁移到github pages上，发现我之前购买的服务器早就过期，导致我丢失了前面几篇博客😂（不备份的锅）。最后只找到了最后一篇，姑且先将其放上来，如果有时间再补充前面的。  很久没有更新博客了，因为一些个人事情耽误了很久，而且最近也准备换工作，忙得不可开交。这几天抽得空闲再续前言。  引言前面两篇博客已经简单得说明了基本成像原理和Core Animation工作机制。本文将据此分析具">
+<meta property="og:description" content="很久没有更新博客了，因为一些个人事情耽误了很久，而且最近也准备换工作，忙得不可开交。这几天抽得空闲再续前言。  引言前面两篇博客已经简单得说明了基本成像原理和Core Animation工作机制。本文将据此分析具体卡顿的原因，如何避免这些问题造成的卡顿。这里只提供基本的解决思路，不涉及完整的代码实现。 有一点需要补充说明的，第一篇中我们说了帧缓存这个概念，那么在iOS系统中使用的是双缓存还是三缓">
 <meta property="og:image" content="http://obzbp948j.bkt.clouddn.com/2016090229668QQ20160902-1@2x.png">
 <meta property="og:image" content="http://obzbp948j.bkt.clouddn.com/2016090287177QQ20160902-2@2x.png">
 <meta property="og:image" content="http://obzbp948j.bkt.clouddn.com/2016090212960QQ20160902-3@2x.png">
-<meta property="og:updated_time" content="2017-07-18T06:28:10.000Z">
+<meta property="og:updated_time" content="2017-07-18T06:34:51.000Z">
 <meta name="twitter:card" content="summary">
 <meta name="twitter:title" content="iOS 图形探究 – 3.优化">
-<meta name="twitter:description" content="最近将博客迁移到github pages上，发现我之前购买的服务器早就过期，导致我丢失了前面几篇博客😂（不备份的锅）。最后只找到了最后一篇，姑且先将其放上来，如果有时间再补充前面的。  很久没有更新博客了，因为一些个人事情耽误了很久，而且最近也准备换工作，忙得不可开交。这几天抽得空闲再续前言。  引言前面两篇博客已经简单得说明了基本成像原理和Core Animation工作机制。本文将据此分析具">
+<meta name="twitter:description" content="很久没有更新博客了，因为一些个人事情耽误了很久，而且最近也准备换工作，忙得不可开交。这几天抽得空闲再续前言。  引言前面两篇博客已经简单得说明了基本成像原理和Core Animation工作机制。本文将据此分析具体卡顿的原因，如何避免这些问题造成的卡顿。这里只提供基本的解决思路，不涉及完整的代码实现。 有一点需要补充说明的，第一篇中我们说了帧缓存这个概念，那么在iOS系统中使用的是双缓存还是三缓">
 <meta name="twitter:image" content="http://obzbp948j.bkt.clouddn.com/2016090229668QQ20160902-1@2x.png">
 
 
@@ -303,8 +303,7 @@
       
 
       
-        <p>最近将博客迁移到github pages上，发现我之前购买的服务器早就过期，导致我丢失了前面几篇博客😂（不备份的锅）。最后只找到了最后一篇，姑且先将其放上来，如果有时间再补充前面的。</p>
-<blockquote>
+        <blockquote>
 <p>很久没有更新博客了，因为一些个人事情耽误了很久，而且最近也准备换工作，忙得不可开交。这几天抽得空闲再续前言。</p>
 </blockquote>
 <h2 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h2><p>前面两篇博客已经简单得说明了基本成像原理和<code>Core Animation</code>工作机制。本文将据此分析具体卡顿的原因，如何避免这些问题造成的卡顿。这里只提供基本的解决思路，不涉及完整的代码实现。</p>
@@ -414,6 +413,22 @@ kCGBlendModePlusLighter             /* R = MIN(1, S + D) */
       
 
       
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+              <a href="/2017/07/18/开篇/" rel="prev" title="开篇">
+                开篇 <i class="fa fa-chevron-right"></i>
+              </a>
+            
+          </div>
+        </div>
+      
 
       
       
@@ -482,7 +497,7 @@ kCGBlendModePlusLighter             /* R = MIN(1, S + D) */
           
             <div class="site-state-item site-state-posts">
               <a href="/">
-                <span class="site-state-item-count">1</span>
+                <span class="site-state-item-count">2</span>
                 <span class="site-state-item-name">日志</span>
               </a>
             </div>
