@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next mist use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+  
+  
+  
+  
+
+  
+    
+    
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+    
+    
+    <link href="//fonts.googleapis.com/css?family=Lato:300,300italic,400,400italic,700,700italic&subset=latin,latin-ext" rel="stylesheet" type="text/css">
+  
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.1" rel="stylesheet" type="text/css" />
+
+
+  <meta name="keywords" content="Hexo, NexT" />
+
+
+
+
+
+
+
+
+  <link rel="shortcut icon" type="image/x-icon" href="/favicon.ico?v=5.1.1" />
+
+
+
+
+
+
+<meta name="description" content="很久没有更新博客了，因为一些个人事情耽误了很久，而且最近也准备换工作，忙得不可开交。这几天抽得空闲再续前言。  引言前面两篇博客已经简单得说明了基本成像原理和Core Animation工作机制。本文将据此分析具体卡顿的原因，如何避免这些问题造成的卡顿。这里只提供基本的解决思路，不涉及完整的代码实现。 有一点需要补充说明的，第一篇中我们说了帧缓存这个概念，那么在iOS系统中使用的是双缓存还是三缓">
+<meta property="og:type" content="article">
+<meta property="og:title" content="iOS 图形探究 – 3.优化">
+<meta property="og:url" content="http://yoursite.com/2017/07/18/iOS-图形探究-–-3-优化/index.html">
+<meta property="og:site_name" content="Blog">
+<meta property="og:description" content="很久没有更新博客了，因为一些个人事情耽误了很久，而且最近也准备换工作，忙得不可开交。这几天抽得空闲再续前言。  引言前面两篇博客已经简单得说明了基本成像原理和Core Animation工作机制。本文将据此分析具体卡顿的原因，如何避免这些问题造成的卡顿。这里只提供基本的解决思路，不涉及完整的代码实现。 有一点需要补充说明的，第一篇中我们说了帧缓存这个概念，那么在iOS系统中使用的是双缓存还是三缓">
+<meta property="og:image" content="http://obzbp948j.bkt.clouddn.com/2016090229668QQ20160902-1@2x.png">
+<meta property="og:image" content="http://obzbp948j.bkt.clouddn.com/2016090287177QQ20160902-2@2x.png">
+<meta property="og:image" content="http://obzbp948j.bkt.clouddn.com/2016090212960QQ20160902-3@2x.png">
+<meta property="og:updated_time" content="2017-07-18T06:17:09.000Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="iOS 图形探究 – 3.优化">
+<meta name="twitter:description" content="很久没有更新博客了，因为一些个人事情耽误了很久，而且最近也准备换工作，忙得不可开交。这几天抽得空闲再续前言。  引言前面两篇博客已经简单得说明了基本成像原理和Core Animation工作机制。本文将据此分析具体卡顿的原因，如何避免这些问题造成的卡顿。这里只提供基本的解决思路，不涉及完整的代码实现。 有一点需要补充说明的，第一篇中我们说了帧缓存这个概念，那么在iOS系统中使用的是双缓存还是三缓">
+<meta name="twitter:image" content="http://obzbp948j.bkt.clouddn.com/2016090229668QQ20160902-1@2x.png">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Mist',
+    sidebar: {"position":"left","display":"post","offset":12,"offset_float":0,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    motion: true,
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="http://yoursite.com/2017/07/18/iOS-图形探究-–-3-优化/"/>
+
+
+
+
+
+  <title>iOS 图形探究 – 3.优化 | Blog</title>
+  
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail ">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">Blog</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal " itemscope itemtype="http://schema.org/Article">
+    <link itemprop="mainEntityOfPage" href="http://yoursite.com/2017/07/18/iOS-图形探究-–-3-优化/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="Shi Heng">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="Blog">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">iOS 图形探究 – 3.优化</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2017-07-18T14:13:51+08:00">
+                2017-07-18
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <blockquote>
+<p>很久没有更新博客了，因为一些个人事情耽误了很久，而且最近也准备换工作，忙得不可开交。这几天抽得空闲再续前言。</p>
+</blockquote>
+<h2 id="引言"><a href="#引言" class="headerlink" title="引言"></a>引言</h2><p>前面两篇博客已经简单得说明了基本成像原理和<code>Core Animation</code>工作机制。本文将据此分析具体卡顿的原因，如何避免这些问题造成的卡顿。这里只提供基本的解决思路，不涉及完整的代码实现。</p>
+<p>有一点需要补充说明的，第一篇中我们说了<em>帧缓存</em>这个概念，那么在iOS系统中使用的是双缓存还是三缓存呢？根据<a href="https://developer.apple.com/videos/play/wwdc2015-233/?time=740" target="_blank" rel="external">WWDC 2015’s session 233:Advanced Touch Input on iOS</a>中所说，iOS系统会根据渲染速度在这2种模式中自动切换。例如，当一帧时间内<code>Core Animation</code>和GPU可以完成一帧内容的渲染，那么此时就是双缓存模式。反之，系统会自动切换至三缓存模式，以此来保证画面的流畅度。</p>
+<h2 id="混合"><a href="#混合" class="headerlink" title="混合"></a>混合</h2><p>平时我们写代码的时候，往往会给不同的CALayer添加不同的颜色，不同的透明度，我们最后看到是所有这些层CALayer混合出的结果。</p>
+<p>那么在iOS中是如何进行混合的？前面我们说明了每个像素都包含了R（红）、G（绿）、B（蓝）和R（透明度），GPU要计算每个像素混合来的RGB值。那么如何计算这些颜色的混合值呢？假设在正常混合模式下，并且是<em>像素对齐</em>（后面将解释这个名词）的两个CALayer，混合计算公式如下：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">R = S + D * ( 1 – Sa )</div></pre></td></tr></table></figure>
+<p>苹果的文档中有对每个参数的解释：</p>
+<pre><code>The blend mode constants introduced in OS X v10.5   represent the Porter-Duff blend modes. The symbols in the   equations for these blend modes are:
+
+    * R is the premultiplied result
+
+    * S is the source color, and includes alpha
+
+    * D is the destination color, and includes alpha
+
+    * Ra, Sa, and Da are the alpha components of R, S, and D
+</code></pre><p>R就是得到的结果色，S和D是包含透明度的源色和目标色，其实就是预先乘以透明度后的值。Sa就是源色的透明度。iOS为我们提供了多种的Blend mode：</p>
+<pre><code> /* Available in Mac OS X 10.5 &amp; later. R, S, and D are, respectively,
+   premultiplied result, source, and destination colors with alpha; Ra,
+   Sa, and Da are the alpha components of these colors.
+
+   The Porter-Duff &quot;source over&quot; mode is called `kCGBlendModeNormal&apos;:
+     R = S + D*(1 - Sa)
+
+   Note that the Porter-Duff &quot;XOR&quot; mode is only titularly related to the
+   classical bitmap XOR operation (which is unsupported by
+   CoreGraphics). */
+
+kCGBlendModeClear,                  /* R = 0 */
+kCGBlendModeCopy,                   /* R = S */
+kCGBlendModeSourceIn,               /* R = S*Da */
+kCGBlendModeSourceOut,              /* R = S*(1 - Da) */
+kCGBlendModeSourceAtop,             /* R = S*Da + D*(1 - Sa) */
+kCGBlendModeDestinationOver,        /* R = S*(1 - Da) + D */
+kCGBlendModeDestinationIn,          /* R = D*Sa */
+kCGBlendModeDestinationOut,         /* R = D*(1 - Sa) */
+kCGBlendModeDestinationAtop,        /* R = S*(1 - Da) + D*Sa */
+kCGBlendModeXOR,                    /* R = S*(1 - Da) + D*(1 - Sa) */
+kCGBlendModePlusDarker,             /* R = MAX(0, (1 - D) + (1 - S)) */
+kCGBlendModePlusLighter             /* R = MIN(1, S + D) */
+</code></pre><p>似乎计算也不是很复杂，但是这只是一个像素覆盖另一个像素简单的一步计算，而正常情况我们现实的界面会有非常多的层，每一层都会有百万计的像素，这都要GPU去计算，负担是很重的。</p>
+<h2 id="像素对齐"><a href="#像素对齐" class="headerlink" title="像素对齐"></a>像素对齐</h2><p>对齐？，感觉有点眼熟吧。学习操作系统的时候也有这么一个相似概率<em>字节对齐</em>，但是这两个是意思完全不同的概念。但是都是为了提高性能的，字节对齐是让一个数据在内存中的地址必须是一个整数的倍数，提高读取性能。</p>
+<p>像素对齐就是视图上所有像素和屏幕上的像素完美对齐。上面我们说混合的时候，假设的情况是多个layer是在每个像素都完全对齐的情况下来进行计算的，如果像素不对齐的情况下，GPU需要进行Anti－aliasing反抗锯齿计算，GPU的负担就会加重。像素对齐的情况下，我们只需要把所有layer上的单个像素进行混合计算即可。</p>
+<p>那么什么原因造成像素不对齐？主要有两点：</p>
+<ol>
+<li>图像的放大和缩小。</li>
+<li>边缘像素不对齐，即起始坐标不是整数。<br>这两点都有可能造成像素不对齐。如果想获得更好的图形性能，作为开发者要尽可能得避免这两种情况。</li>
+</ol>
+<h2 id="不透明"><a href="#不透明" class="headerlink" title="不透明"></a>不透明</h2><p>上面我们说过一个混合计算的公式：</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div></pre></td><td class="code"><pre><div class="line">R = S + D * ( 1 – Sa )</div></pre></td></tr></table></figure>
+<p>如果Sa值为1，也就是源色对应的像素不透明。那么得到<code>R = S</code>，这样就只需要拷贝最上层的layer，不需要再进行复杂的计算了。因为下面层的layer全部是可不见的，所以GPU无需进行混合计算了。如何让GPU知道这个图像是不透明的呢？如果使用的是CALayer，那么要把opaque属性设置成YES（默认是NO）。而若只用的是UIView，opaque默认属性是YES。当GPU知道是不透明的时候，只会做简单的拷贝工作，避免了复杂的计算，大大减轻了GPU的工作量。</p>
+<p>如果加载一个没有alpha通道的图片，opaque属性会自动设置为YES。但是如果是一个每个像素alpha值都为100%的图片，尽管此图不透明但是<code>Core Animation</code>依然会假定是否存在alpha值不为100%的像素。</p>
+<h2 id="解码"><a href="#解码" class="headerlink" title="解码"></a>解码</h2><p>上一篇文章我们有说到，一般在Core Animation准备阶段，会对图片进行解码操作，即把压缩的图像解码成位图数据。这是一个很消耗CPU的事情。系统是在图片将要渲染到屏幕之前再进行解码，而且默认是在主线程中进行的。所以我们可以将解码放在子线程中进行，下面简单列举一种解码方式：</p>
+<p>`<br>NSString <em>picPath = [[NSBundle mainBundle] pathForResource:@”tests” ofType:@”png”];<br>NSData </em>imageData = [NSData dataWithContentsOfFile:picPath];//读取未解码图片数据</p>
+<p>CGImageSourceRef imageSourceRef = CGImageSourceCreateWithData((__bridge CFTypeRef)imageData, NULL);<br>CGImageRef imageRef = CGImageSourceCreateImageAtIndex(imageSourceRef, 0, (CFDictionaryRef)@{(id)kCGImageSourceShouldCache:@(NO)});<br>CFRelease(imageSourceRef);<br>size_t width = CGImageGetWidth(imageRef);//获取图片宽度<br>size_t height = CGImageGetHeight(imageRef);//获取图片高度<br>CGColorSpaceRef colorSpace = CGImageGetColorSpace(imageRef);</p>
+<p>size_t bitsPerComponent = CGImageGetBitsPerComponent(imageRef);//每个颜色组件占的bit数<br>size_t bitsPerPixel = CGImageGetBitsPerPixel(imageRef);//每个像素占几bit<br>size_t bytesPerRow = CGImageGetBytesPerRow(imageRef);//位图数据每行占多少bit<br>CGBitmapInfo bitmapInfo = CGImageGetBitmapInfo(imageRef);</p>
+<p>CGDataProviderRef dataProvider = CGImageGetDataProvider(imageRef);<br>CFRelease(imageRef);<br>CFDataRef dataRef = CGDataProviderCopyData(dataProvider);//获得解码后数据<br>CGDataProviderRef newProvider = CGDataProviderCreateWithCFData(dataRef);<br>CFRelease(dataRef);</p>
+<p>CGImageRef newImageRef = CGImageCreate(width, height, bitsPerComponent, bitsPerPixel, bytesPerRow, colorSpace, bitmapInfo, newProvider, NULL, false, kCGRenderingIntentDefault);<br>CFRelease(newProvider);</p>
+<p>UIImage *image = [UIImage imageWithCGImage:newImageRef scale:2.0 orientation:UIImageOrientationUp];<br>CFRelease(newImageRef);<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><div class="line">1</div><div class="line">2</div><div class="line">3</div><div class="line">4</div><div class="line">5</div><div class="line">6</div><div class="line">7</div><div class="line">8</div><div class="line">9</div><div class="line">10</div><div class="line">11</div><div class="line">12</div><div class="line">13</div><div class="line">14</div><div class="line">15</div><div class="line">16</div><div class="line">17</div><div class="line">18</div><div class="line">19</div><div class="line">20</div><div class="line">21</div><div class="line">22</div><div class="line">23</div><div class="line">24</div><div class="line">25</div></pre></td><td class="code"><pre><div class="line">另外，在iOS7之后苹果提供了一个属性`kCGImageSourceShouldCacheImmediately`，在`CGImageSourceCreateImageAtIndex`方法中，设置`kCGImageSourceShouldCacheImmediately`为`kCFBooleanTrue`的话可以立刻开始解压缩，默认为`kCFBooleanFalse`。当然也像AFNetworking 中使用`void CGContextDrawImage(CGContextRef __nullable c, CGRect rect, CGImageRef __nullable image)`方法也可以实现解码，具体实现不在此赘述。</div><div class="line"></div><div class="line">## 字节对齐</div><div class="line">我们前面说像素对齐时，简单介绍了字节对齐。那么到底什么是字节对齐？为什么要字节对齐？和我们优化图形性能有什么关系呢？下面我们将具体来一一说明。</div><div class="line"></div><div class="line">字节对齐是对基本数据类型的地址做了一些限制，即某种数据类型对象的地址必须是其值的整数倍。例如，处理器从内存中读取一个8个字节的数据，那么数据地址必须是8的整数倍。</div><div class="line"></div><div class="line">对齐是为了提高读取的性能。因为处理器读取内存中的数据不是一个一个字节读取的，而是一块一块读取的一般叫做`cache lines`。如果一个不对齐的数据放在了2个数据块中，那么处理器可能要执行两次内存访问。当这种不对齐的数据非常多的时候，就会影响到读取性能了。这样可能会牺牲一些储存空间，但是对提升了内存的性能，对现代计算机来说是更好的选择。</div><div class="line"></div><div class="line">在iOS中，如果这个图像的数据没有字节对齐，那么Core Animation会自动拷贝一份数据做对齐处理。这里我们可以提前做好字节对齐。在方法`CGBitmapContextCreate(void * __nullable data, size_t width, size_t height, size_t bitsPerComponent, size_t bytesPerRow, CGColorSpaceRef __nullable space, uint32_t bitmapInfo)`中，有一个参数bytesPerRow,意思是指定要使用的位图每行内存的字节数，ARMv7架构的处理器的cache lines是32byte，A9处理器的是64byte，这里我们要使bytesPerRow为64的整数倍。具体可以参考官方文档[Quartz 2D Programming Guide][2]和[WWDC 2012 Session 238 &quot;iOS App Performance: Graphics and Animations&quot;][3]。字节对齐，在一般情况下，感觉对性能的影响很小，没必要的情况不要过早优化。</div><div class="line"></div><div class="line">## 离屏渲染</div><div class="line">离屏渲染（Off-Screen Rendering）是指GPU在当前屏幕缓冲区以外新开辟一个缓冲区进行渲染操作。离屏渲染是很消耗性能的，因为首先要创建屏幕外缓冲区，还要进行两次上下文环境切换。先切换到屏幕外环境，离屏渲染完成后再切换到当前屏幕，上下文的切换是很高昂的消耗。产生离屏渲染的原因就是这些图层不能直接绘制在屏幕上，必须进行预合成。</div><div class="line"></div><div class="line">产生离屏渲染的情况大概有几种：</div><div class="line">1.`cornerRadius`和`masksToBounds`（UIView中是`clipToBounds`）一起使用的时候，单独使用不会触发离屏渲染。`cornerRadius`只对背景色起作用,所以有contents的图层需要对其进行裁剪。</div><div class="line">2.为图层设置mask（遮罩）。</div><div class="line">3.layer的`allowsGroupOpacity`属性为YES且`opacity`小于1.0，GroupOpacity是指子图层的透明度值不能大于父图层的。</div><div class="line">4.设置了shadow（阴影）。</div><div class="line"></div><div class="line">上面这几种情况都是GPU的离屏渲染，还有一种特殊的CPU离屏渲染。只要实现Core Graphics绘制API会产生CPU的离屏渲染。因为它也不是直接绘制到屏幕上的，而且先创建屏幕外的缓存。</div><div class="line"></div><div class="line">我们如何解决这几个产生离屏渲染的问题呢?首先，GroupOpacity对性能几乎没有影响，在此就不多说了。圆角是一个无法避免的，网上有很多例子是用Core Graphics绘制来代替系统圆角的，但是Core Graphics是一种软件绘制，利用的是CPU，性能上要差上不少。当然在CPU利用率不是很高的界面是个不错的选择，但是有时候某个界面可能需要CPU去做其他消耗很大的事情，如网络请求。这个时候时候在用Core Graphics绘制大量的圆角图形就有可能出现掉帧。这种情况怎么办呢？最好的就是设计师直接提供圆角图像。还有一种折中的方法就是在混合图层，在原图层上覆盖一个你要的圆角形状的图层，中间需要显示的部分是透明的，覆盖的部分和周围背景一致。</div><div class="line"></div><div class="line">对于shadow，如果图层是个简单的几何图形或者圆角图形，我们可以通过设置`shadowPath`来优化性能，能大幅提高性能。示例如下：</div></pre></td></tr></table></figure></p>
+<p>imageView.layer.shadowColor = [UIColor grayColor].CGColor;<br>imageView.layer.shadowOpacity = 1.0;<br>imageView.layer.shadowRadius = 2.0;<br>UIBezierPath *path = [UIBezierPath bezierPathWithRect:imageView.frame];<br>imageView.layer.shadowPath = path.CGPath;<br><code>``
+我们还可以通过设置</code>shouldRasterize`属性值为YES来强制开启离屏渲染。其实就是光栅化（Rasterization）。既然离屏渲染这么不好，为什么我们还要强制开启呢？当一个图像混合了多个图层，每次移动时，每一帧都要重新合成这些图层，十分消耗性能。当我们开启光栅化后，会在首次产生一个位图缓存，当再次使用时候就会复用这个缓存。但是如果图层发生改变的时候就会重新产生位图缓存。所以这个功能一般不能用于UITableViewCell中，cell的复用反而降低了性能。最好用于图层较多的静态内容的图形。而且产生的位图缓存的大小是有限制的，一般是2.5个屏幕尺寸。在100ms之内不使用这个缓存，缓存也会被删除。所以我们要根据使用场景而定。</p>
+<h2 id="Instruments"><a href="#Instruments" class="headerlink" title="Instruments"></a>Instruments</h2><p>上面我们说了这么多性能相关的因素，那么我们怎么进行性能的测试，怎么知道哪些因素影响了图形性能？苹果很人性得为我们提供了一个测试工具Instruments。可以在Xcode->Open Develeper Tools->Instruments中找到，如下图：<br><img src="http://obzbp948j.bkt.clouddn.com/2016090229668QQ20160902-1@2x.png" alt="Instruments.png-c"><br>我们看到这里面有很多的测试工具，像大家可能常用的检测内存泄漏的Leaks，在这里我们就讨论下Core Animation这个工具的使用。</p>
+<p>Core Animation工具用来监测Core Animation性能。提供可见的FPS值。并且提供几个选项来测量渲染性能，如下图：<br><img src="http://obzbp948j.bkt.clouddn.com/2016090287177QQ20160902-2@2x.png" alt="Core Animation.png-c"><br>下面我们来说明每个选项的能：<br><strong>Color Blended Layers</strong>：这个选项如果勾选，你能看到哪个layer是透明的，GPU正在做混合计算。显示红色的就是透明的，绿色就是不透明的。</p>
+<p><strong>Color Hits Green and Misses Red</strong>：如果勾选这个选项，且当我们代码中有设置shouldRasterize为YES，那么红色代表没有复用离屏渲染的缓存，绿色则表示复用了缓存。我们当然希望能够复用。</p>
+<p><strong>Color Copied Images</strong>：按照官方的说法，当图片的颜色格式GPU不支持的时候，Core Animation会<br>拷贝一份数据让CPU进行转化。例如从网络上下载了TIFF格式的图片，则需要CPU进行转化，这个区域会显示成蓝色。还有一种情况会触发Core Animation的copy方法，就是字节不对齐的时候。如下图：</p>
+<p><img src="http://obzbp948j.bkt.clouddn.com/2016090212960QQ20160902-3@2x.png" alt="2016090212960QQ20160902-3@2x.png-c"><br>但是我发现即使触发了Copy方法也不会显示蓝色，不知道是不是一个BUG。</p>
+<p><strong>Color Immediately</strong>：默认情况下Core Animation工具以每毫秒10次的频率更新图层调试颜色，如果勾选这个选项则移除10ms的延迟。对某些情况需要这样，但是有可能影响正常帧数的测试。</p>
+<p><strong>Color Misaligned Images</strong>：勾选此项，如果图片需要缩放则标记为黄色，如果没有像素对齐则标记为紫色。像素对齐我们已经在上面有所介绍。</p>
+<p><strong>Color Offscreen-Rendered Yellow</strong>：用来检测离屏渲染的，如果显示黄色，表示有离屏渲染。当然还要结合<code>Color Hits Green and Misses Red</code>来看，是否复用了缓存。</p>
+<p><strong>Color OpenGL Fast Path Blue</strong>：这个选项对那些使用OpenGL的图层才有用，像是GLKView或者 CAEAGLLayer，如果不显示蓝色则表示使用了CPU渲染，绘制在了屏幕外，显示蓝色表示正常。</p>
+<p><strong>Flash Updated Regions</strong>：当对图层重绘的时候回显示黄色，如果频繁发生则会影响性能。可以用增加缓存来增强性能。官方文档<a href="https://developer.apple.com/library/ios/documentation/2DDrawing/Conceptual/DrawingPrintingiOS/DrawingTips/DrawingTips.html" target="_blank" rel="external">Improving Drawing Performance</a>有所说明。</p>
+<h2 id="总结"><a href="#总结" class="headerlink" title="总结"></a>总结</h2><p>结合前面两章内容，我们发现，一个简单的图片显示在屏幕上，要经过很多步骤，并且有许多硬件的参与。最主要的就是CPU和GPU，协调他们之间的工作是高性能得关键。</p>
+<p>因为图形的性能和两者都有关系，CPU主要负责软解码、I/O相关、布局的计算等工作，如果使用Core Graphics绘图API那么也会用到CPU。GPU的主要责任就是合成渲染。为了能够得到最好的性能，我们就要找出是哪个限制了性能，CPU过度利用还是GPU负担太大。通过苹果给出的Instruments里面的测试工具，我们在真机上一次次的测试，才能正确的判断出无法保证画面60FPS的原因。必须平衡两者，才能达到最好的性能。</p>
+<p>下面我们总结几个优化点：<br>1.尽量使用iOS优化处理的图片格式，减少CPU软解码的负担。<br>2.能不透明的不要使用透明度，减少混合计算。<br>3.不要让图层过于复杂，不然增加了处理图层，打包传送到渲染服务的工作量，GPU渲染负担也会增大。<br>4.最好不要使用离屏渲染，必须使用的话最好能够复用缓存，离屏渲染对性能影响是最大的。<br>5.布局不要过于复杂，如果必须要复杂的布局，可以提前缓存布局数据。<br>6.不要滥用多线程，因为创建和销毁线程不仅增加CPU任务量，而且会消耗内存。</p>
+<p>最后需要说明的就是不要过早和过度得优化，过犹不及。过早优化得不偿失，反而耗时耗力。过度优化有时候适得其反。</p>
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <div>
+      
+        
+
+      
+    </div>
+
+    <footer class="post-footer">
+      
+
+      
+      
+      
+
+      
+
+      
+      
+    </footer>
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+  <div class="comments" id="comments">
+    
+  </div>
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap" >
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview sidebar-panel">
+        <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+          <img class="site-author-image" itemprop="image"
+               src="/images/avatar.gif"
+               alt="Shi Heng" />
+          <p class="site-author-name" itemprop="name">Shi Heng</p>
+           
+              <p class="site-description motion-element" itemprop="description">个人博客</p>
+          
+        </div>
+        <nav class="site-state motion-element">
+
+          
+            <div class="site-state-item site-state-posts">
+              <a href="/">
+                <span class="site-state-item-count">1</span>
+                <span class="site-state-item-name">日志</span>
+              </a>
+            </div>
+          
+
+          
+
+          
+
+        </nav>
+
+        
+
+        <div class="links-of-author motion-element">
+          
+        </div>
+
+        
+        
+
+        
+        
+
+        
+
+
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#引言"><span class="nav-number">1.</span> <span class="nav-text">引言</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#混合"><span class="nav-number">2.</span> <span class="nav-text">混合</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#像素对齐"><span class="nav-number">3.</span> <span class="nav-text">像素对齐</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#不透明"><span class="nav-number">4.</span> <span class="nav-text">不透明</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#解码"><span class="nav-number">5.</span> <span class="nav-text">解码</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#Instruments"><span class="nav-number">6.</span> <span class="nav-text">Instruments</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#总结"><span class="nav-number">7.</span> <span class="nav-text">总结</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">
+  
+  &copy; 
+  <span itemprop="copyrightYear">2017</span>
+  <span class="with-love">
+    <i class="fa fa-heart"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">Shi Heng</span>
+</div>
+
+
+
+
+
+        
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+
+  
+  <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+
+  
+  <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+
+  
+  <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.1"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.1"></script>
+
+
+
+  
+  
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.1"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.1"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
