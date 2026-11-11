@@ -1,0 +1,10 @@
+#!name=WLOC - Apple Trust Asset Update Block
+#!desc=Experimental. Reject selected Apple MobileAsset update endpoints as discussed in Yu9191/wloc issue #172. May prevent security certificate/trust updates; use temporarily and verify logs.
+#!homepage=https://github.com/Yu9191/wloc/issues/172
+
+[Rule]
+DOMAIN-SUFFIX,gdmf.apple.com,REJECT
+DOMAIN-SUFFIX,gdmf-ados.apple.com,REJECT
+DOMAIN-SUFFIX,mesu.apple.com,REJECT
+DOMAIN-SUFFIX,updates.cdn-apple.com,REJECT
+DOMAIN-SUFFIX,updates-http.cdn-apple.com,REJECT
