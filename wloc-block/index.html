@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="robots" content="noindex,nofollow">
+<title>WLOC · Shadowrocket 资产更新拦截</title>
+<style>
+:root{color-scheme:dark;font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft Yahei",sans-serif;background:#090e1b;color:#eff5ff}
+*{box-sizing:border-box}body{margin:0;padding:28px 15px 55px;background:radial-gradient(ellipse at 70% 0%,#1f3653 0%,#090e1b 57%);min-height:100vh}
+main{max-width:680px;margin:auto}header{margin:15px auto 22px;text-align:center}
+.eyebrow{font-size:12px;color:#a2c8f2;letter-spacing:1px;font-weight:700}h1{font-size:clamp(26px,6vw,36px);margin:12px 0;line-height:1.25}p{color:#becbdd;line-height:1.8}
+.card{border:1px solid #32465f;background:#101c2cde;border-radius:20px;padding:24px;margin:16px 0;box-shadow:0 20px 50px #0003}
+.qr-wrap{background:#fff;border-radius:17px;padding:14px;width:256px;height:256px;margin:12px auto 22px;display:flex;align-items:center;justify-content:center}
+.qr-wrap img{width:100%;height:100%;image-rendering:pixelated}h2{font-size:19px;margin:0 0 12px}
+.btn{display:block;width:100%;text-align:center;text-decoration:none;background:#66c8ff;color:#051727;font-size:16px;font-weight:750;border:0;border-radius:12px;padding:15px 16px;cursor:pointer}
+.btn.alt{background:#243951;color:#eff5ff;margin-top:10px}
+.small{font-size:13px;color:#aebdd2;text-align:center}
+ol{padding-left:25px;color:#dce5ef;line-height:1.9}li{padding:3px 0}code{font-family:ui-monospace,Menlo,monospace;background:#1d3147;border-radius:5px;padding:2px 5px;font-size:12px}
+.rule{background:#081421;border:1px solid #2b405a;border-radius:12px;padding:12px;overflow:auto;color:#b8e9cc;font-size:12px;line-height:1.65}
+.warn{border-left:3px solid #efb966;padding-left:12px;color:#eed2a5;font-size:14px;line-height:1.8}
+footer{text-align:center;color:#92a4b8;font-size:12px;margin:30px auto}a{color:#a3dbff}
+</style></head><body><main>
+<header><div class="eyebrow">WLOC · SHADOWROCKET · EXPERIMENTAL</div><h1>阻止受信任资产自动更新</h1><p>保留你现有的机场节点订阅，仅叠加 5 条 Apple MobileAsset 拦截规则。</p></header>
+<section class="card"><h2 style="text-align:center">扫码安装小火箭模块</h2>
+<div class="qr-wrap"><img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAYEAAAGBAQAAAACoIjCJAAAEw0lEQVR42u1cQc6zNhSciZGcndl16dygR3BOVszJCjeBG8AOq8B0YZKvVVf4X1UyG758ymxGT+N5741D4d7TP3DqYiKqIj/ISKRJBsAI9VgfQFAagGQbDHGB1I7kyTbyu5thJN0AusrRBz00xjF5/oao3as7Cg+gSBpq1wVIGYSSH6kmPnkDswdH2YD0GkHgJ5N5erm0/z8ub5CJADf/wmz/bYAfzS7MJJ/2WWuXP0awk1jlLTMXSSfK989DrYIEWarXJUjvAQAfgAbuGmMMNI0yuxYyXg0+BGIyu5NxEryAWDueCK1CJ/XYTc3hQikFiPJZ+Xq5qPPs8Eraoebgk4jTQC1XXXtvl+Lld1b7G5uAmC0+CG/FE8AQMfdLgBO4PpKZbcEEcTEFiGeB9v53Zkd8APUJK8BRlqATqkqQ4EyfKs1RBgtAGA2NwVJ0gScsIsfOmlztXbv92ojZZSVIVeykptfI9kkvoKM1nbuiKPWbolneKE/yBajmJ5uAh5m9VMQDrf4ngDge9VerfBUC9JuFz/gzMpwZhN8GklDR2lBiGc91cq6iaFnAzehMzuAEB+AG98wie38xtGk1vcyqc7Iik61AdzhJkC7lXIJ+6GD2ZyGDrALgrTbWrv3lQF+yL5A4m41hchsD05YaQAAp4vrym5BN5G19ftS9ruAlYbcVIRYu4kShF0AHA2cdLmu/gGrsYvcUzt3POza+qFj1d1SBHdg5mdUdiIvgMwGjDK71UhefqJydVN3rxmu1+fkOgE3BV1zBu6Ar7pbrAyjmJwm9GpSi1FG2/oC1MApj3bmd8/kau0WnGpSvCSBkiZ014zs6jR+dhO1dssQF5HHtVU30hT4AOD7yB1Oiso6Ubm62U0AOM0G5DL1w3dGtn/97o8JruzeQqT2H71acguCTtgFI2nXFiHmUw1HU2u3qHZD1l3FTwsMACFS0hSUVRhn9QwltevVX+arM3kCSUka8vhmwCPLham7iTJEoOzmRsYTiS/gaBJf6LIH63E83dhF2Zp0KkCspJie2eHaZe6iSW7BGHN0L++Lh+48qt8t0F1pwAk4Ddk6oMuDcuXetzvxXQ1X3S061bRbTei0W01BebTzme9mLxzr1rIMkSNOaxiQ/W5PbU4DcLj5hT6HcDqyKkOJZxjf4DdFupJSk8guwqx+ugbsfWTN7xbNGfJkIScYNniJ0uKlnHuKuY+L2qvulp1qHXerCbhyjjBbtr0X15tT5rqye+tpgNwkNGgX4fEXAIA75t8F0momdDzd/MK1xajs3kdcg3LlqC4OtgBg1tbnnbBXvTdRnCPLHizEb1rELp+8KfDxZ9XvFiFmRmltfa8Hkp+CHvmfbLAG6TSr1/Ap78ruPc+Aa+boB2i3P4lInbCacLk1ADUtUuQZLlEN/8qeB118XmPz2qsV1i6AnOX/fvpG976fqt/9lbuWiUERx9PpOuPybuLnPtCjOrLCU435JTZ2md84D/IVpOSW+d2fyBer7NpWrko6YZw/Wf6cYJAU8x0VMWty3Vr+EsL3+Y57iErkC1B6Yn7ndeWourUsq908KNcE4Js9dxr+cV/tuuNea7fUM1y+wOoKhnj9XAqUNNRe7T6C9XdxKqIiKuI/z99e6t8S7xyEbQAAAABJRU5ErkJggg==" alt="使用 Shadowrocket 扫码安装阻断模块"></div>
+<p class="small">电脑上显示二维码 → 手机 Shadowrocket 首页左上角扫码</p>
+<a class="btn" href="shadowrocket://install?module=https%3A%2F%2Fraw.githubusercontent.com%2Fcuocuo%2Fcuocuo.github.io%2Fmaster%2Fwloc-block%2Fwloc-assets.module">在 iPhone 上打开并安装</a>
+<button class="btn alt" id="copy" type="button">复制模块地址（手动导入备用）</button>
+<p class="small">模块不会替换现有坨坨云订阅，也不会自动连接 VPN。</p></section>
+<section class="card"><h2>安装后检查</h2><ol>
+<li>在 Shadowrocket「配置 → 模块」中确认 <b>WLOC - Apple Trust Asset Update Block</b> 已启用。</li>
+<li>将「全局路由」设为 <b>配置</b>，打开 Shadowrocket VPN 开关。必要时启用按需连接。</li>
+<li>在 Shadowrocket 的规则测试 / 连接日志中确认 <code>gdmf.apple.com</code> 命中 <code>REJECT</code>。</li>
+<li>观察「设置 → 通用 → 关于本机 → 证书信任设置」里的受信任资产版本是否保持原值。</li>
+</ol><p class="warn"><b>重要：</b>这是社区实验方案，不保证系统服务全部经过 VPN，也不能把 1014 降回 1013。拦截会影响 Apple 系统更新及证书信任安全更新，可能影响 App Store 等功能。仅建议在理解风险的测试设备上临时使用，完成验证后及时恢复更新。</p></section>
+<section class="card"><h2>拦截范围（来自 Issue #172）</h2>
+<pre class="rule">[Rule]
+DOMAIN-SUFFIX,gdmf.apple.com,REJECT
+DOMAIN-SUFFIX,gdmf-ados.apple.com,REJECT
+DOMAIN-SUFFIX,mesu.apple.com,REJECT
+DOMAIN-SUFFIX,updates.cdn-apple.com,REJECT
+DOMAIN-SUFFIX,updates-http.cdn-apple.com,REJECT</pre>
+<p>只覆盖上述域名，不含 <code>gs-loc.apple.com</code>，不修改已有 WLOC 解密配置。<a href="https://raw.githubusercontent.com/cuocuo/cuocuo.github.io/master/wloc-block/wloc-assets.module" target="_blank" rel="noopener">查看模块原文</a>。</p></section>
+<footer>资料来源：<a href="https://github.com/Yu9191/wloc/issues/172">Yu9191/wloc #172</a> · 此页面不收集或存储机场订阅 token。</footer>
+</main><script>
+document.getElementById('copy').addEventListener('click',async function(){
+ const s="https://raw.githubusercontent.com/cuocuo/cuocuo.github.io/master/wloc-block/wloc-assets.module";
+ try {await navigator.clipboard.writeText(s);this.textContent='已复制模块地址';}catch(e){window.prompt('复制模块地址',s);}
+});
+</script></body></html>
